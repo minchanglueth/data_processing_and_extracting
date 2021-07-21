@@ -39,7 +39,7 @@ import sqlalchemy as sa
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
 
-gsheet_name = 'Recheck_notItunes'
+gsheet_name = 'Youtube collect_Recheck_notItunes'
 # gsheet_name = "Minchan"
 sheet_contribute_notItunes = open_urls.worksheet(gsheet_name)
 file_name = open_urls.title
@@ -50,7 +50,7 @@ df_notItunes_ori = find_dfcolumn(df_contribute_notItunes, "PointlogsID")
 # print(df_contribute_notItunes)
 prevalid_row = find_rowdf(df_contribute_notItunes, "pre_valid")
 df_prevalid = df_notItunes_ori["pre_valid"][df_notItunes_ori["pre_valid"] != ""]
-print(prevalid_row)
+# print(prevalid_row)
 # print(df_prevalid)
 if df_prevalid.empty:
     last_prevalid_row_ori = prevalid_row
@@ -520,5 +520,5 @@ def check_and_update():
 "--------------------------------END_Check_and_Update--------------------------------"
 
 # extract_report()
-extract_similarity()
+# extract_similarity()
 # check_and_update()
