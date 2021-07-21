@@ -90,6 +90,7 @@ class Contributions:
         sheetname = "Missing Artist"
         actiontype = "MA"
         column_filter = "Artist name on Itunes"
+        column_itunes = "Artist_Itunes_link"
         itune_validate = check_validate_artistitune
         column_info = "artist_info"
         slack_title = "missing artists found from itunes"
@@ -113,6 +114,7 @@ class Contributions:
         # sheetname = "Minchan"
         actiontype = "MAA"
         column_filter = "Album's Itunes link"
+        column_itunes = "Album's Itunes link"
         itune_validate = check_validate_albumitune
         column_info = "album_info"
         slack_title = "missing albums found from itunes"
@@ -314,7 +316,7 @@ class df_processing:
 def check_validate_and_update_db(contribution):
     df_approve = df_processing(contribution).create_df_approve()
     df_approve = check_validate(
-        df_approve, contribution.itune_validate, contribution.column_filter
+        df_approve, contribution.itune_validate, contribution.column_itunes
     )
     # check validate cho df_approve
     df_approve["itune_id_region"] = (
@@ -486,5 +488,5 @@ def check_image_and_album_status(contribution, pre_valid_list):
 # check_valid_empty_dup(Contributions.MAA_Contribution)
 # pre_valid_list = ["2021-06-29"]
 
-# check_image_album_status(Contributions.MAA_Contribution,pre_valid_list)
-# check_image_album_status(Contributions.MA_Contribution, pre_valid_list)
+# check_image_and_album_status(Contributions.MAA_Contribution,pre_valid_list)
+# check_image_and_album_status(Contributions.MA_Contribution, pre_valid_list)
