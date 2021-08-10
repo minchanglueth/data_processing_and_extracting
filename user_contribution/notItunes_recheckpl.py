@@ -23,9 +23,7 @@ from raw_sql import (
 
 from notItunes_album import (
     filter_column_to_check,
-    open_urls,
-    find_dfcolumn,
-    find_rowdf,
+    # open_urls,
     update_db,
 )
 from update_data_report import report_invalid_ids
@@ -38,32 +36,35 @@ import urllib
 import sqlalchemy as sa
 from sqlalchemy.ext.mutable import MutableDict
 from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from df_processing import df_processing
 
-gsheet_name = 'Youtube collect_Recheck_notItunes'
-# gsheet_name = "Minchan"
-sheet_contribute_notItunes = open_urls.worksheet(gsheet_name)
-file_name = open_urls.title
-data_contribute_notItunes = sheet_contribute_notItunes.get_all_values()
-df_contribute_notItunes = pd.DataFrame(data_contribute_notItunes)
+# sheet_name = 'Youtube collect_Recheck_notItunes'
+# sheet_name = "Minchan"
+# # sheet_contribute_notItunes = open_urls.worksheet(sheet_name)
+# # file_name = open_urls.title
+# data_contribute_notItunes = sheet_contribute_notItunes.get_all_values()
+# # df_contribute_notItunes = pd.DataFrame(data_contribute_notItunes)
+# df_contribute_notItunes = df_ori(open_urls).create_df_ori()
+# df_notItunes_ori = find_dfcolumn(df_contribute_notItunes, "PointlogsID")
+# # print(df_contribute_notItunes)
+# prevalid_row = find_rowdf(df_contribute_notItunes, "pre_valid")
+# df_prevalid = df_notItunes_ori["pre_valid"][df_notItunes_ori["pre_valid"] != ""]
+# # print(prevalid_row)
+# # print(df_prevalid)
+# if df_prevalid.empty:
+#     last_prevalid_row_ori = prevalid_row
+# else:
+#     last_prevalid_row_ori = df_prevalid[-1:].index.tolist()[0]
+# # print(last_prevalid_row_ori)
+# # print(prevalid_row)
+# last_prevalid_row = last_prevalid_row_ori - prevalid_row
 
-df_notItunes_ori = find_dfcolumn(df_contribute_notItunes, "PointlogsID")
-# print(df_contribute_notItunes)
-prevalid_row = find_rowdf(df_contribute_notItunes, "pre_valid")
-df_prevalid = df_notItunes_ori["pre_valid"][df_notItunes_ori["pre_valid"] != ""]
-# print(prevalid_row)
-# print(df_prevalid)
-if df_prevalid.empty:
-    last_prevalid_row_ori = prevalid_row
-else:
-    last_prevalid_row_ori = df_prevalid[-1:].index.tolist()[0]
-# print(last_prevalid_row_ori)
-# print(prevalid_row)
-last_prevalid_row = last_prevalid_row_ori - prevalid_row
+# df_notItunes = df_notItunes_ori[last_prevalid_row:]
 
-df_notItunes = df_notItunes_ori[last_prevalid_row:]
-# print(last_prevalid_row)
-# print(df_notItunes)
-
+class CY_Contribution_notItunes:
+        sheetname = "Youtube collect_Recheck_notItunes"
+        # sheetname = "Minchan"
+        actiontype = "CY"
 
 class To_uuid:
     def __init__(self, column_1, column_2, id_list, df):
@@ -116,9 +117,9 @@ def create_column(new_column, lookup_column, query, df):
     To_uuid(new_column, lookup_column, lookup_list, df).transform()
 
 
-def extract_report():
+def extract_report(open_urls):
 
-    df = filter_column_to_check()
+    df = filter_column_to_check(open_urls)
     df = df[
         (df["pointlogid"] != "") & (df["PointlogID MAA"] != "")
     ]  # lọc các TH có youtubeurl ở sheet Missing Artist Album not Itunes
@@ -143,8 +144,8 @@ def extract_report():
     create_column("Artist_Album", "Album_UUID", artist_name_albums, df)
 
     df["VIBBIDI_album_link"] = "https://www.vibbidi.net/album?id=" + df["Album_UUID"]
-
     # filter những case đã check ở sheet Recheck_notItunes
+    df_notItunes_ori = df_processing(CY_Contribution_notItunes, open_urls).create_df_tocheck_ori()
     df_donechecking = (
         df_notItunes_ori[["PointlogsID", "Youtube_URL"]]
         .set_index("PointlogsID")["Youtube_URL"]
@@ -154,15 +155,15 @@ def extract_report():
     To_uuid("checked", "pointlogid", df_donechecking, df).transform()
     df = df[df["checked"] == ""]
 
-    report_invalid_ids(
-        # "minchan_notitune",
-        "Youtube collect_Recheck_notItunes",
-        "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=433164688",
-        df,
-    ).create_and_update()
-    df_row = len(df_contribute_notItunes) + 1
+    # report_invalid_ids(
+    #     # "minchan_notitune",
+    #     CY_Contribution_notItunes.sheetname,
+    #     "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=433164688",
+    #     df,
+    # ).create_and_update() ## để xuất ra những thằng mới cần add thêm
+    df_row = len(df_processing(CY_Contribution_notItunes, open_urls).create_df_ori()) + 1
     set_with_dataframe(
-        sheet_contribute_notItunes, df, row=df_row, col=2, include_column_header=False
+        df_processing(CY_Contribution_notItunes, open_urls).create_sheet(), df, row=df_row, col=2, include_column_header=False
     )
 
     send_message_slack(
@@ -215,7 +216,8 @@ class my_dictionary(dict):
         self[key] = value
 
 
-def extract_similarity():
+def extract_similarity(open_urls):
+    df_notItunes = df_processing(CY_Contribution_notItunes, open_urls).create_df_tocheck()
     single_page_column = df_notItunes["VIBBIDI_single_link"]
 
     dict_full_shorturi = my_dictionary()
@@ -278,9 +280,9 @@ def extract_similarity():
     ]
     start_column_insert = df_notItunes.columns.get_loc("track_id") + 1
     set_with_dataframe(
-        sheet_contribute_notItunes,
+        df_processing(CY_Contribution_notItunes, open_urls).create_sheet(),
         df_notItunes_toinsert,
-        row=last_prevalid_row_ori + 1,
+        row=df_processing(CY_Contribution_notItunes, open_urls).create_last_prevalid_row_ori() + 1,
         col=start_column_insert,
         include_column_header=False,
     )
@@ -388,19 +390,19 @@ def update_contribution(
     return query
 
 
-def update_d9():
-    filter_df = df_notItunes
+def update_d9(open_urls):
+    filter_df = df_processing(CY_Contribution_notItunes, open_urls).create_df_tocheck()
     filter_df["pre_valid"] = str(date.today())
     start_column_insert = filter_df.columns.get_loc("pre_valid") + 1
     set_with_dataframe(
-        sheet_contribute_notItunes,
+        df_processing(CY_Contribution_notItunes, open_urls).create_sheet(),
         filter_df[["pre_valid"]],
-        row=last_prevalid_row_ori + 1,
+        row=df_processing(CY_Contribution_notItunes, open_urls).create_last_prevalid_row_ori() + 1,
         col=start_column_insert,
         include_column_header=False,
     )
-    sheet_name = file_name
-    PIC_taskdetail = f"{gsheet_name}_{sheet_name}_{str(date.today())}"
+    file_name = df_processing(CY_Contribution_notItunes,open_urls).get_filename()
+    PIC_taskdetail = f"{file_name}_{file_name}_{str(date.today())}"
     filter_df["crawling_task"] = filter_df.apply(
         lambda x: update_contribution(
             content_type=x["content type"],
@@ -416,18 +418,17 @@ def update_d9():
         axis=1,
     )
     update_db(filter_df["crawling_task"])
-    report_invalid_ids(
-        # "minchan_notitune",
-        "Youtube collect_Recheck_notItunes",
-        "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=1732133691&fvid=1833119072",
-        filter_df,
-    ).create_and_update()
+    # report_invalid_ids(
+    #     "minchan_notitune",
+    #     "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=1732133691&fvid=1833119072",
+    #     filter_df,
+    # ).create_and_update() ## để xuất ra những thằng mới cần add thêm
 
 
 "--------------------------------END_Update_pointlogs--------------------------------"
 
 
-def check_and_update():
+def check_and_update(open_urls):
     criteria = {
         "LIVE_VIDEO": "live_concert_name_place",
         "OFFICIAL_MUSIC_VIDEO_2": "official_music_video_2",
@@ -443,6 +444,7 @@ def check_and_update():
     }
 
     append_missing_df = pd.DataFrame()
+    df_notItunes = df_processing(CY_Contribution_notItunes, open_urls).create_df_tocheck()
     for content_type in criteria:
         df_value = df_notItunes[df_notItunes["content type"] == content_type][
             criteria.get(content_type)
@@ -486,7 +488,7 @@ def check_and_update():
             + Style.RESET_ALL
         )
         print(Fore.LIGHTBLUE_EX + "\nNow updating pointlogs..." + Style.RESET_ALL)
-        update_d9()
+        update_d9(open_urls)
         print(Fore.LIGHTBLUE_EX + "\nNow notify slack..." + Style.RESET_ALL)
         send_message_slack(
             "missing songs not from itunes",

@@ -6,4 +6,5 @@ subgenre_specialcharacter = {
     "AfroPop": "Afro Pop",
     "County Pop": "Country Pop",
     "Synmphonic": "Symphonic",
+    "Punk": "Punk Rock"
 }
