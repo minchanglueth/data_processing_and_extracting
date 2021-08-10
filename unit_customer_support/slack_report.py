@@ -24,10 +24,10 @@ class send_message_slack:
         try:
             # client_slack.chat_postMessage(channel='minchan-testing', text=str(report_crawler_updated)) #MM<3
             # client_slack.chat_postMessage(channel='unit-collection', text=str(report_crawler_updated)) #vibbidi-correct
-            client_slack.chat_postMessage(
-                channel="data-auto-report-error", text=str(report_crawler_updated)
-            )  # vibbidi-test
-            # client_slack.chat_postMessage(channel='unit-customersupport', text=str(report_crawler_updated)) #vibbidi-correct
+            # client_slack.chat_postMessage(
+            #     channel="data-auto-report-error", text=str(report_crawler_updated)
+            # )  # vibbidi-test
+            client_slack.chat_postMessage(channel='unit-customersupport', text=str(report_crawler_updated)) #vibbidi-correct
         except SlackApiError as e:
             ## You will get a SlackApiError if "ok" is False
             assert e.response["ok"] is False

@@ -15,6 +15,7 @@ from raw_sql import ma_album_status, ma_image_status, maa_status
 from slack_report import (ma_itunes_plupdate, maa_itunes_plupdate,
                           send_message_slack)
 from update_data_report import report_invalid_ids, update_data_gsheet
+from df_processing import df_processing
 
 # from notItunes_recheckpl import create_column
 
@@ -174,10 +175,8 @@ class To_uuid:
         if self.column_1 not in ["Image_status", "Itunes_status"]:
             self.df[self.column_1] = ""
         for id in self.id_list:
-            self.df[self.column_1].loc[self.df[self.column_2] == id] = str(
-                self.id_list.get(id)
-            )  # ChartId và Genre và genreid_ta_list
-
+            self.df[self.column_1].loc[self.df[self.column_2] == id] = str(self.id_list.get(id))  # ChartId và Genre và genreid_ta_list
+            # print(self.df[self.df[self.column_2] == id][[self.column_2,self.column_1]])
 
 def update_db(df_column):
     for query in df_column:
@@ -226,14 +225,14 @@ def create_df_dict(df, columnkey, columnvalue):
     return df_dict
 
 
-def create_df_approve(df_ori, contribution):
-    df_approve = df_ori[df_ori[contribution.column_filter] != "not found"]
-    return df_approve
+# def create_df_approve(df_ori, contribution):
+#     df_approve = df_ori[df_ori[contribution.column_filter] != "not found"]
+#     return df_approve
 
 
-def create_df_reject(df_ori, contribution):
-    df_reject = df_ori[df_ori[contribution.column_filter] == "not found"]
-    return df_reject
+# def create_df_reject(df_ori, contribution):
+#     df_reject = df_ori[df_ori[contribution.column_filter] == "not found"]
+#     return df_reject
 
 
 def df_filter_column(df, contribution):
@@ -256,65 +255,73 @@ def update_slack_report(
     )
 
 
-open_urls = client_gspread.open_by_url(
-    "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=1108901814"
-)
+# open_urls = client_gspread.open_by_url(
+#     "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=1108901814"
+# )
 
 
-class df_processing:
-    def __init__(self, contribution):
-        self.contribution = contribution
+# class df_processing:
+#     def __init__(self, contribution, open_urls):
+#         self.contribution = contribution
+#         self.url = open_urls
 
-    def create_sheet(self):
-        sheet = open_urls.worksheet(self.contribution.sheetname)
-        return sheet
+#     def create_sheet(self):
+#         sheet = self.url.worksheet(self.contribution.sheetname)
+#         return sheet
 
-    def create_df_ori(self):
-        sheet = self.create_sheet()
-        data = sheet.get_all_values()
-        df_ori = pd.DataFrame(data)
-        return df_ori
+#     def create_df_ori(self):
+#         sheet = self.create_sheet()
+#         data = sheet.get_all_values()
+#         df_ori = pd.DataFrame(data)
+#         return df_ori
 
-    def create_df_tocheck_ori(self):
-        # Tạo df với columns có chứa PoinglogsID
-        df_ori = self.create_df_ori()
-        df_tocheck_ori = find_dfcolumn(df_ori, "PointlogsID")
-        return df_tocheck_ori
+#     def create_df_tocheck_ori(self):
+#         # Tạo df với columns có chứa PoinglogsID
+#         df_ori = self.create_df_ori()
+#         df_tocheck_ori = find_dfcolumn(df_ori, "PointlogsID")
+#         # df_tocheck_ori = df_tocheck_ori.loc[:, ~df_tocheck_ori.columns.duplicated()]
+#         return df_tocheck_ori
 
-    def create_prevalid_row(self):
-        # Xác định dòng cuối giá trị prevalid và tạo df với các dòng sau prevalid
-        df_ori = self.create_df_ori()
-        find_dfcolumn(df_ori, "PointlogsID")
-        prevalid_row = find_rowdf(df_ori, "pre_valid")
-        return prevalid_row
+#     def create_prevalid_row(self):
+#         # Xác định dòng cuối giá trị prevalid và tạo df với các dòng sau prevalid
+#         df_ori = self.create_df_ori()
+#         find_dfcolumn(df_ori, "PointlogsID")
+#         prevalid_row = find_rowdf(df_ori, "pre_valid")
+#         return prevalid_row
 
-    def create_last_prevalid_row_ori(self):
-        df_tocheck_ori = self.create_df_tocheck_ori()
-        df_prevalid = df_tocheck_ori["pre_valid"][df_tocheck_ori["pre_valid"] != ""]
-        # print(df_prevalid)
-        if df_prevalid.empty:
-            last_prevalid_row_ori = self.create_prevalid_row()
-        else:
-            last_prevalid_row_ori = df_prevalid[-1:].index.tolist()[0]
+#     def create_last_prevalid_row_ori(self):
+#         df_tocheck_ori = self.create_df_tocheck_ori()
+#         df_prevalid = df_tocheck_ori["pre_valid"][df_tocheck_ori["pre_valid"] != ""]
+#         # print(df_prevalid)
+#         if df_prevalid.empty:
+#             last_prevalid_row_ori = self.create_prevalid_row()
+#         else:
+#             last_prevalid_row_ori = df_prevalid[-1:].index.tolist()[0]
 
-        return last_prevalid_row_ori
+#         return last_prevalid_row_ori
 
-    def create_df_tocheck(self):
-        last_prevalid_row_ori = self.create_last_prevalid_row_ori()
-        prevalid_row = self.create_prevalid_row()
-        df_tocheck_ori = self.create_df_tocheck_ori()
-        last_prevalid_row = last_prevalid_row_ori - prevalid_row
-        df_tocheck = df_tocheck_ori[last_prevalid_row:]
-        return df_tocheck
+#     def create_df_tocheck(self):
+#         last_prevalid_row_ori = self.create_last_prevalid_row_ori()
+#         prevalid_row = self.create_prevalid_row()
+#         df_tocheck_ori = self.create_df_tocheck_ori()
+#         last_prevalid_row = last_prevalid_row_ori - prevalid_row
+#         df_tocheck = df_tocheck_ori[last_prevalid_row:]
+#         return df_tocheck
 
-    def create_df_approve(self):
-        df_tocheck = self.create_df_tocheck()
-        df_approve = create_df_approve(df_tocheck, self.contribution)
-        return df_approve
+#     def create_df_approve(self):
+#         df_tocheck = self.create_df_tocheck()
+#         df_approve = df_tocheck[df_tocheck[self.contribution.column_filter] != "not found"]
+#         # df_approve = create_df_approve(df_tocheck, self.contribution)
+#         return df_approve
+    
+#     def create_df_reject(self):
+#         df_tocheck = self.create_df_tocheck()
+#         df_reject = df_tocheck[df_tocheck[self.contribution.column_filter] == "not found"]
+#         # df_approve = create_df_approve(df_tocheck, self.contribution)
+#         return df_reject
 
-
-def check_validate_and_update_db(contribution):
-    df_approve = df_processing(contribution).create_df_approve()
+def check_validate_and_update_db(contribution, open_urls):
+    df_approve = df_processing(contribution, open_urls).create_df_approve()
     df_approve = check_validate(
         df_approve, contribution.itune_validate, contribution.column_itunes
     )
@@ -350,22 +357,26 @@ def check_validate_and_update_db(contribution):
 
     df_filtered_false_validate = df_approve[df_approve["check_validate"] != "True"]
     if df_filtered_false_validate.empty:
-        df_tocheck = df_processing(contribution).create_df_tocheck()
+        # df_tocheck = df_processing(contribution, open_urls).create_df_tocheck()
         print("\n" + Fore.LIGHTBLUE_EX + "Now updating pointlogs..." + Style.RESET_ALL)
         df_reject = create_query_reject(
-            create_df_reject(df_tocheck, contribution), contribution.actiontype
+            df_processing(contribution, open_urls).create_df_reject(), contribution.actiontype
         )
+        # df_reject = create_query_reject(
+        #     create_df_reject(df_tocheck, contribution), contribution.actiontype
+        # )
         df_approve = contribution.create_info(df_approve)
         df_approve = create_query_approve(
             df_approve, contribution.column_info, contribution.actiontype
         )
         update_db(df_reject["reject_query"])
         update_db(df_approve["approve_query"])
+        df_tocheck = df_processing(contribution, open_urls).create_df_tocheck()
         df_tocheck["pre_valid"] = str(date.today())
         start_column_insert = df_tocheck.columns.get_loc("pre_valid") + 1
-        sheet_tocheck = df_processing(contribution).create_sheet()
+        sheet_tocheck = df_processing(contribution, open_urls).create_sheet()
         last_prevalid_row_ori = df_processing(
-            contribution
+            contribution, open_urls
         ).create_last_prevalid_row_ori()
         set_with_dataframe(
             sheet_tocheck,
@@ -392,9 +403,9 @@ def check_validate_and_update_db(contribution):
     # df_tocheck.to_html('df_tocheck_ori.html')
 
 
-def check_valid_empty_dup(contribution):
+def check_valid_empty_dup(contribution, open_urls):
     # check valid:
-    df_approve = df_processing(contribution).create_df_approve()
+    df_approve = df_processing(contribution, open_urls).create_df_approve()
     list_input = contribution.list_input
 
     # print(df_approve)
@@ -430,7 +441,7 @@ def check_valid_empty_dup(contribution):
             + "\nNo rows have empty input / No rows have been duplicated"
             + Style.RESET_ALL
         )
-        check_validate_and_update_db(contribution)
+        check_validate_and_update_db(contribution, open_urls)
     else:
         print(
             Fore.LIGHTGREEN_EX
@@ -460,14 +471,14 @@ def check_valid_empty_dup(contribution):
     print(Fore.LIGHTYELLOW_EX + "\nThe file is done processing!" + Style.RESET_ALL)
 
 
-def check_status(contribution, status_type, status_column, pre_valid_list):
-    df_tocheck_ori = df_processing(contribution).create_df_tocheck_ori()
+def check_status(contribution, status_type, status_column, pre_valid_list, open_urls):
+    df_tocheck_ori = df_processing(contribution, open_urls).create_df_tocheck_ori()
     df_check_status = df_tocheck_ori[df_tocheck_ori["pre_valid"].isin(pre_valid_list)]
     lookup_list = To_df("PointlogsID", status_type, df_check_status).list()
     To_uuid(status_column, "PointlogsID", lookup_list, df_tocheck_ori).transform()
     start_column_insert = df_tocheck_ori.columns.get_loc(status_column) + 1
-    sheet_tocheck = df_processing(contribution).create_sheet()
-    prevalid_row = df_processing(contribution).create_prevalid_row()
+    sheet_tocheck = df_processing(contribution, open_urls).create_sheet()
+    prevalid_row = df_processing(contribution, open_urls).create_prevalid_row()
     set_with_dataframe(
         sheet_tocheck,
         df_tocheck_ori[[status_column]],
@@ -477,12 +488,12 @@ def check_status(contribution, status_type, status_column, pre_valid_list):
     )
 
 
-def check_image_and_album_status(contribution, pre_valid_list):
+def check_image_and_album_status(contribution, pre_valid_list, open_urls):
     if contribution == Contributions.MA_Contribution:
-        check_status(contribution, ma_image_status, "Image_status", pre_valid_list)
-        check_status(contribution, ma_album_status, "Itunes_status", pre_valid_list)
+        check_status(contribution, ma_image_status, "Image_status", pre_valid_list, open_urls)
+        check_status(contribution, ma_album_status, "Itunes_status", pre_valid_list, open_urls)
     elif contribution == Contributions.MAA_Contribution:
-        check_status(contribution, maa_status, "Itunes_status", pre_valid_list)
+        check_status(contribution, maa_status, "Itunes_status", pre_valid_list, open_urls)
 
 
 # check_valid_empty_dup(Contributions.MAA_Contribution)
