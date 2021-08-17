@@ -45,7 +45,7 @@ class MAA_Contribution_notItunes:
         actiontype = "MAA"
         
         # columns_name:
-        pointlogid = "pointlogid"
+        pointlogid = "PointlogsID"
         missing_Track_Name_or_Album_Name = "Missing_Track_Name/Album_Name"
         youtube_URL = "Youtube_URL"
         album_Info_URL = "Album_Info_URL"
@@ -456,7 +456,7 @@ def check_filledinfo(df_tocheck_ori, open_urls):
                         # print(type(i))
                         update_data(
                             i,
-                            column_index(MAA_Contribution_notItunes.pointlogID_MAA, df_processing(MAA_Contribution_notItunes,open_urls).create_df_ori()).colum_index_value(),
+                            column_index(MAA_Contribution_notItunes.pointlogID_MAA, df_processing(MAA_Contribution_notItunes,open_urls).create_df_tocheck_ori()).colum_index_value(),
                             id_MAA_dict[album_artist_name],
                             df_processing(MAA_Contribution_notItunes,open_urls).create_sheet(),
                         ).update_data_gspread()

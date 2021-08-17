@@ -41,7 +41,7 @@ class df_processing:
         return df_ori
 
     def create_df_tocheck_ori(self):
-        # Tạo df với columns có chứa PoinglogsID
+        # Tạo df với columns có chứa PointlogsID
         df_ori = self.create_df_ori()
         df_tocheck_ori = find_dfcolumn(df_ori, "PointlogsID")
         # df_tocheck_ori = df_tocheck_ori.loc[:, ~df_tocheck_ori.columns.duplicated()]

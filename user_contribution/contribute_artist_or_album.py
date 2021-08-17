@@ -10,13 +10,14 @@ from gspread_dataframe import set_with_dataframe
 
 from itunes import (check_validate, check_validate_albumitune,
                     check_validate_artistitune)
-from notItunes_album import find_dfcolumn, find_rowdf, name
-from raw_sql import ma_album_status, ma_image_status, maa_status
+from notItunes_album import name
+from raw_sql import ma_album_status, ma_image_status, maa_status, cy_notItunes_D9_status, cy_notItunes_D9_id, maa_notItunes_status
 from slack_report import (ma_itunes_plupdate, maa_itunes_plupdate,
                           send_message_slack)
 from update_data_report import report_invalid_ids, update_data_gsheet
-from df_processing import df_processing
-
+from df_processing import df_processing, find_rowdf
+from notItunes_recheckpl import CY_Contribution_notItunes
+from notItunes_album import MAA_Contribution_notItunes
 # from notItunes_recheckpl import create_column
 
 def create_artistinfo(df):
@@ -89,6 +90,7 @@ select_valid_plid_MAA = """select id, id from pointlogs where ActionType = 'MAA'
 class Contributions:
     class MA_Contribution:
         sheetname = "Missing Artist"
+        # sheetname = "Minchan"
         actiontype = "MA"
         column_filter = "Artist name on Itunes"
         column_itunes = "Artist_Itunes_link"
@@ -473,12 +475,19 @@ def check_valid_empty_dup(contribution, open_urls):
 
 def check_status(contribution, status_type, status_column, pre_valid_list, open_urls):
     df_tocheck_ori = df_processing(contribution, open_urls).create_df_tocheck_ori()
-    df_check_status = df_tocheck_ori[df_tocheck_ori["pre_valid"].isin(pre_valid_list)]
-    lookup_list = To_df("PointlogsID", status_type, df_check_status).list()
-    To_uuid(status_column, "PointlogsID", lookup_list, df_tocheck_ori).transform()
+    if contribution == MAA_Contribution_notItunes:
+        df_check_status = df_tocheck_ori[df_tocheck_ori[MAA_Contribution_notItunes.pointlogID_MAA] != ""]
+        lookup_list = To_df(MAA_Contribution_notItunes.pointlogID_MAA, status_type, df_check_status).list()
+        To_uuid(status_column, MAA_Contribution_notItunes.pointlogID_MAA, lookup_list, df_tocheck_ori).transform()
+        prevalid_row = df_tocheck_ori.index[0] - 1
+    else:
+        df_check_status = df_tocheck_ori[df_tocheck_ori["pre_valid"].isin(pre_valid_list)]
+        lookup_list = To_df("PointlogsID", status_type, df_check_status).list()
+        To_uuid(status_column, "PointlogsID", lookup_list, df_tocheck_ori).transform()
+        prevalid_row = df_processing(contribution, open_urls).create_prevalid_row()
     start_column_insert = df_tocheck_ori.columns.get_loc(status_column) + 1
     sheet_tocheck = df_processing(contribution, open_urls).create_sheet()
-    prevalid_row = df_processing(contribution, open_urls).create_prevalid_row()
+    # prevalid_row = df_processing(contribution, open_urls).create_prevalid_row()
     set_with_dataframe(
         sheet_tocheck,
         df_tocheck_ori[[status_column]],
@@ -494,6 +503,12 @@ def check_image_and_album_status(contribution, pre_valid_list, open_urls):
         check_status(contribution, ma_album_status, "Itunes_status", pre_valid_list, open_urls)
     elif contribution == Contributions.MAA_Contribution:
         check_status(contribution, maa_status, "Itunes_status", pre_valid_list, open_urls)
+    elif contribution == CY_Contribution_notItunes:
+        check_status(contribution, cy_notItunes_D9_id, "D9_id", pre_valid_list, open_urls)
+        check_status(contribution, cy_notItunes_D9_status, "D9_status", pre_valid_list, open_urls)
+    elif contribution == MAA_Contribution_notItunes:
+        check_status(contribution, maa_notItunes_status, "notItunes_status", None, open_urls)
+
 
 
 # check_valid_empty_dup(Contributions.MAA_Contribution)

@@ -114,3 +114,39 @@ WHERE
 	AND pl.ActionType = 'MAA' 
 	AND pl.valid = 1 
 	AND pl.id IN {}"""
+
+cy_notItunes_D9_id = """SELECT
+	pl.id AS PointlogsID,
+	cl.id AS D9_id
+FROM
+	pointlogs pl
+	LEFT JOIN crawlingtasks cl ON cl.id = pl.Ext ->> '$.crawler_id' 
+WHERE
+	cl.ActionId = '1BB6B994C60F4216998282F92D27EDD9' 
+	AND pl.ActionType = 'CY' 
+	AND pl.valid = 1 
+	AND pl.id IN {}"""
+
+cy_notItunes_D9_status = """SELECT
+	pl.id AS PointlogsID,
+	cl.`Status` AS D9_status
+FROM
+	pointlogs pl
+	LEFT JOIN crawlingtasks cl ON cl.id = pl.Ext ->> '$.crawler_id' 
+WHERE
+	cl.ActionId = '1BB6B994C60F4216998282F92D27EDD9' 
+	AND pl.ActionType = 'CY' 
+	AND pl.valid = 1 
+	AND pl.id IN {}"""
+
+maa_notItunes_status = """SELECT
+	pl.id AS PointlogID_MAA,
+	cl.`Status` AS notItunes_status 
+FROM
+	pointlogs pl
+	LEFT JOIN crawlingtasks cl ON cl.id = pl.Ext ->> '$.crawler_id' 
+WHERE
+	cl.ActionId = '348637F531454DD6B1CC108A77C94DB2' 
+	AND pl.ActionType = 'MAA' 
+	AND pl.Valid = 1 
+	AND pl.id IN {}"""
