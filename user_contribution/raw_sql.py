@@ -150,3 +150,137 @@ WHERE
 	AND pl.ActionType = 'MAA' 
 	AND pl.Valid = 1 
 	AND pl.id IN {}"""
+
+ma_and_maa_mp3_mp4_checking = """
+	(SELECT
+	Trim( SUBSTRING_INDEX( albums.iTunesUrl, '/',- 1 ) ) AS ItunesID,
+	artists.uuid `Artist_track_uuid`,
+	-- artists.square_image_url as artist_image_url, 
+	-- artists.info ->> '$.wiki_url' as artist_wiki_url,
+	-- artists.info ->> '$.wiki.brief' as artist_wiki_content,
+	albums.UUID AS `Album_uuid`,
+	itunes_album_tracks_release.Artist `Artist Album`,
+	albums.Title AS `Album Title`,
+	albums.square_image_url,
+	-- albums.info ->> '$.wiki_url' as album_wiki_url,
+	-- albums.info ->> '$.wiki.brief' as album_wiki_content,
+	itunes_album_tracks_release.iTunesUrl `iTunes album URL`,
+	itunes_album_tracks_release.Seq `Track Number`,
+	tracks.id `track_id`,
+	itunes_album_tracks_release.TrackName AS `Song Title on Itunes`,
+	itunes_album_tracks_release.TrackArtist AS `Artist Track on iTunes`,
+	-- tracks.lyrics,
+	-- datasources.SourceURI as 'MP4_link',
+	-- d.SourceURI AS 'Mp3_link',
+	{}
+	-- trackcountlog.DataSourceCount ->> '$.live' as count_live,
+	-- trackcountlog.DataSourceCount ->> '$.remix' as count_remix
+	
+	FROM
+		albums
+		LEFT JOIN itunes_album_tracks_release ON albums.uuid = itunes_album_tracks_release.AlbumUUID 
+		AND itunes_album_tracks_release.valid = 1
+		LEFT JOIN tracks ON tracks.Title = itunes_album_tracks_release.trackname 
+		AND tracks.Artist = itunes_album_tracks_release.trackartist 
+		AND tracks.Valid = 1
+		LEFT JOIN artists ON Artists.`Name` = itunes_album_tracks_release.TrackArtist 
+		AND artists.valid = 1
+		LEFT JOIN datasources ON datasources.trackid = tracks.id 
+		AND datasources.Valid > 0 
+		AND datasources.formatid = '74BA994CF2B54C40946EA62C3979DDA3'
+		LEFT JOIN datasources d ON d.trackid = tracks.id 
+		AND d.Valid > 0 
+		AND d.formatid = '1A67A5F1E0D84FB9B48234AE65086375'
+		LEFT JOIN trackcountlog ON trackcountlog.TrackID = tracks.id 
+	WHERE
+		(
+			albums.UUID IN (
+			SELECT
+				cl.Ext ->> '$.album_uuid' 
+			FROM
+				pointlogs pl
+				JOIN crawlingtasks cl ON cl.id = pl.Ext ->> '$.crawler_id' 
+			WHERE
+				pl.id IN {} # input pointlogs của MAA vào
+			) 
+		) 
+		AND albums.valid = 1 AND
+		-- AND d.SourceURI IS NULL
+		{}
+	GROUP BY
+		itunes_album_tracks_release.TrackName,
+		itunes_album_tracks_release.TrackArtist 
+	ORDER BY
+		itunes_album_tracks_release.Artist,
+		itunes_album_tracks_release.AlbumUUID,
+		itunes_album_tracks_release.Seq ASC 
+	) 
+	UNION ALL
+	(
+	SELECT
+	Trim( SUBSTRING_INDEX( albums.iTunesUrl, '/',- 1 ) ) AS ItunesID,
+	artists.uuid `Artist_uuid`,
+	-- artists.square_image_url as artist_image_url,
+	-- artists.info ->> '$.wiki_url' as artist_wiki_url,
+	-- artists.info ->> '$.wiki.brief' as artist_wiki_content,
+	albums.UUID AS `Album_uuid`,
+	itunes_album_tracks_release.Artist `Artist Album`,
+	albums.Title AS `Album Title`,
+	albums.square_image_url,
+	-- albums.info ->> '$.wiki_url' as album_wiki_url,
+	-- albums.info ->> '$.wiki.brief' as album_wiki_content,
+	itunes_album_tracks_release.iTunesUrl `iTunes album URL`,
+	itunes_album_tracks_release.Seq `Track Number`,
+	tracks.id `track_id`,
+	itunes_album_tracks_release.TrackName AS `Song Title on Itunes`,
+	itunes_album_tracks_release.TrackArtist AS `Artist Track on iTunes`,
+	-- tracks.lyrics,
+	-- datasources.SourceURI as 'MP4_link',
+	-- d.SourceURI AS 'Mp3_link',
+	{}
+	-- trackcountlog.DataSourceCount ->> '$.live' as count_live,
+	-- trackcountlog.DataSourceCount ->> '$.remix' as count_remix
+		
+	FROM
+		albums
+		LEFT JOIN itunes_album_tracks_release ON albums.uuid = itunes_album_tracks_release.AlbumUUID 
+		AND itunes_album_tracks_release.valid = 1
+		LEFT JOIN tracks ON tracks.Title = itunes_album_tracks_release.trackname 
+		AND tracks.Artist = itunes_album_tracks_release.trackartist 
+		AND tracks.Valid = 1
+		LEFT JOIN artists ON Artists.`Name` = itunes_album_tracks_release.TrackArtist 
+		AND artists.valid = 1
+		LEFT JOIN datasources ON datasources.trackid = tracks.id 
+		AND datasources.Valid > 0 
+		AND datasources.formatid = '74BA994CF2B54C40946EA62C3979DDA3'
+		LEFT JOIN datasources d ON d.trackid = tracks.id 
+		AND d.Valid > 0 
+		AND d.formatid = '1A67A5F1E0D84FB9B48234AE65086375'
+		LEFT JOIN trackcountlog ON trackcountlog.TrackID = tracks.id 
+	WHERE
+		(
+			artists.UUID IN (
+			SELECT
+				cl.Ext ->> '$.artist_uuid' 
+			FROM
+				pointlogs pl
+				JOIN crawlingtasks cl ON cl.id = pl.Ext ->> '$.crawler_id[0]' 
+			WHERE
+				cl.ActionId = 'B06AEE0F622D47F8B6FEF07DC2EABEAE' 
+				AND pl.ActionType = 'MA' 
+				AND pl.valid = 1 
+				AND ( cl.Ext ->> '$.message' != 'Cannot download or upload artist image' OR cl.Ext ->> '$.message' IS NULL ) 
+				AND pl.id IN {} # input pointlogs của MA vào
+			) 
+		) 
+		AND albums.valid = 1 AND
+		-- d.SourceURI IS NULL 
+		{}
+	GROUP BY
+		itunes_album_tracks_release.TrackName,
+		itunes_album_tracks_release.TrackArtist 
+	ORDER BY
+		itunes_album_tracks_release.Artist,
+		itunes_album_tracks_release.AlbumUUID,
+	itunes_album_tracks_release.Seq ASC 
+	)"""
