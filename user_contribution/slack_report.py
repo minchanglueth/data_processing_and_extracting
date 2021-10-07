@@ -28,6 +28,16 @@ CC: <@UDW03RVGR|cal>
 User Contribution on {}: 
 {} album(s) found from itunes were added/updated with tracklists for further checking!"""
 
+ma_maa_mp3 = """Hi <@U01E6SP58HK|cal> !
+CC: <@UDW03RVGR|cal>
+User Contribution on {}: 
+{} missing mp3(s) from contributed artists and albums are ready for further checking!"""
+
+ma_maa_mp4 = """Hi <@U01E6SP58HK|cal> !
+CC: <@UDW03RVGR|cal>
+User Contribution on {}: 
+{} missing mp4(s) from contributed albums and albums are ready for further checking!"""
+
 class send_message_slack:
     def __init__(self, actiontype_description, count_id, message_type):
         self.actiontype_description = actiontype_description

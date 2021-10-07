@@ -198,7 +198,7 @@ def extract_report(open_urls):
     send_message_slack(
         "missing songs not from itunes", len(df.index), cy_notItunes_extract
     ).send_to_slack()
-    update_data_gsheet(str(date.today()), "CY", "notItunes_extract", len(df.index))
+    update_data_gsheet("user_contribute" ,str(date.today()), "CY", "notItunes_extract", len(df.index))
 
     print("\n" + Fore.LIGHTYELLOW_EX + "The file is done processing!" + Style.RESET_ALL)
 
@@ -527,7 +527,7 @@ def check_and_update(open_urls):
             cy_notItunes_plupdate,
         ).send_to_slack()
         update_data_gsheet(
-            str(date.today()), "CY", "notItunes_verifypl", len(df_notItunes.index)
+            "user_contribute" ,str(date.today()), "CY", "notItunes_verifypl", len(df_notItunes.index)
         )
     else:
         print(

@@ -10,18 +10,21 @@ myweekday = calendar.day_name[date.today().weekday()]
 
 open_urls = client_gspread.open_by_url("https://docs.google.com/spreadsheets/d/1MHDksbs-RKXhZZ-LRgRhVy_ldAxK8lSzyoJK4sA_Uyo/edit#gid=141704097")
 
-sheet = open_urls.worksheet('user_contribute')
+# sheet = open_urls.worksheet('user_contribute')
 
-data = sheet.get_all_values()
-df = pd.DataFrame(data, columns= [i for i in data[0]])
+# data = sheet.get_all_values()
+# df = pd.DataFrame(data, columns= [i for i in data[0]])
 # df = pd.DataFrame(data)
 # print(df)
 
-def update_data_gsheet(date,action_type,description,count_id):
+def update_data_gsheet(sheet_name,date,action_type,description,count_id):
+    sheet = open_urls.worksheet(sheet_name)
+    data = sheet.get_all_values()
+    df = pd.DataFrame(data, columns= [i for i in data[0]])
     sheet.update_cell(len(df['Date'])+1,df.columns.get_loc('Date')+1,date)
     sheet.update_cell(len(df['Date'])+1,df.columns.get_loc('action_type')+1,action_type)
     sheet.update_cell(len(df['Date'])+1,df.columns.get_loc('description')+1,description)
-    sheet.update_cell(len(df['Date'])+1,df.columns.get_loc('count_id')+1,count_id)       
+    sheet.update_cell(len(df['Date'])+1,df.columns.get_loc('count_id')+1,count_id)     
 
 
 class report_invalid_ids:

@@ -473,7 +473,7 @@ def check_filledinfo(df_tocheck_ori, open_urls):
                     maa_crawl_not_itunes,
                 ).send_to_slack()
                 update_data_gsheet(
-                    str(date.today()), "MAA", "crawl_not_itunes", len(df.index)
+                    "user_contribute" ,str(date.today()), "MAA", "crawl_not_itunes", len(df.index)
                 )
         else:
             print("No changes made, now Exit")

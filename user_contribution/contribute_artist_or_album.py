@@ -11,12 +11,12 @@ from gspread_dataframe import set_with_dataframe
 from itunes import (check_validate, check_validate_albumitune,
                     check_validate_artistitune)
 from notItunes_album import name
-from raw_sql import ma_album_status, ma_image_status, maa_status, cy_notItunes_D9_status, cy_notItunes_D9_id, maa_notItunes_status
-from slack_report import (ma_itunes_plupdate, maa_itunes_plupdate,
+from raw_sql import ma_album_status, ma_image_status, maa_status, cy_notItunes_D9_status, cy_notItunes_D9_id, maa_notItunes_status, ma_and_maa_mp3_mp4_checking
+from slack_report import (ma_itunes_plupdate, maa_itunes_plupdate, ma_maa_mp3, ma_maa_mp4,
                           send_message_slack)
 from update_data_report import report_invalid_ids, update_data_gsheet
 from df_processing import df_processing, find_rowdf
-from notItunes_recheckpl import CY_Contribution_notItunes
+from notItunes_recheckpl import CY_Contribution_notItunes, To_df
 from notItunes_album import MAA_Contribution_notItunes
 # from notItunes_recheckpl import create_column
 
@@ -111,6 +111,7 @@ class Contributions:
             "Artist_Itunes_link",
             "Artist_image",
         ]
+        report_sheet = "user_contribute"
 
     class MAA_Contribution:
         sheetname = "Missing Artist's Album"
@@ -133,7 +134,27 @@ class Contributions:
             "Missing_Album_Name",
             "Album's Itunes link",
         ]
+        report_sheet = "user_contribute"
 
+    class MA_MAA_MP_3:
+        sheetname = "MP_3"
+        slack_title = "missing mp3(s)"
+        slack_message = ma_maa_mp3
+        actiontype = "MAA+MA"
+        report_description = "extract_mp3"
+        query_condition1 = "d.SourceURI AS 'Mp3_link'"
+        query_condition2 = "d.SourceURI IS NULL"
+        report_sheet = "user_contribute"
+    
+    class MA_MAA_MP_4:
+        sheetname = "MP_4"
+        slack_title = "missing mp4(s)"
+        slack_message = ma_maa_mp4
+        actiontype = "MAA+MA"
+        report_description = "extract_mp4"
+        query_condition1 = "datasources.SourceURI as 'MP4_link'"
+        query_condition2 = "datasources.SourceURI IS NULL"
+        report_sheet = "user_contribute"
 
 class To_df:
     def __init__(self, column, query, df):
@@ -165,6 +186,13 @@ class To_df:
             id2_list = pd.DataFrame(result).set_index(0)[1].to_dict()
         return id2_list
 
+    def list_query(self):
+        id_list = ",".join(
+            "'" + str(x)
+            for x in self.df[self.df[self.column].notnull()][self.column] + "'"
+        )  # AlbumUUID đây là cách biến column thành giá trị các value
+        id_list = "(" + id_list + ")"
+        return id_list
 
 class To_uuid:
     def __init__(self, column_1, column_2, id_list, df):
@@ -246,14 +274,14 @@ def df_filter_column(df, contribution):
 # report_description
 # MA
 def update_slack_report(
-    slack_title, df_approve, slack_message, report_actiontype, report_description
+    slack_title, df_approve, slack_message, report_actiontype, report_description, sheet_name
 ):
     send_message_slack(slack_title, len(df_approve.index), slack_message).msg_slack()
     send_message_slack(
         slack_title, len(df_approve.index), slack_message
     ).send_to_slack()
     update_data_gsheet(
-        str(date.today()), report_actiontype, report_description, len(df_approve.index)
+        sheet_name ,str(date.today()), report_actiontype, report_description, len(df_approve.index)
     )
 
 
@@ -394,6 +422,7 @@ def check_validate_and_update_db(contribution, open_urls):
             contribution.slack_message,
             contribution.actiontype,
             "crawl_itunes",
+            contribution.report_sheet
         )
     else:
         print(
@@ -516,3 +545,50 @@ def check_image_and_album_status(contribution, pre_valid_list, open_urls):
 
 # check_image_and_album_status(Contributions.MAA_Contribution,pre_valid_list)
 # check_image_and_album_status(Contributions.MA_Contribution, pre_valid_list)
+
+def create_pointlogID_complete(contribution, open_urls):
+    df_ori = df_processing(contribution, open_urls).create_df_tocheck_ori()
+    pointlogID_complete_df = df_ori[df_ori["Itunes_status"]=="complete"]
+    pointlogID_complete_list = To_df(
+        "PointlogsID", None, pointlogID_complete_df
+    ).list_query()
+    return pointlogID_complete_list
+
+def extract_MA_MAA_MP3_MP4(open_urls, video_type, none_condition):
+    # check valid:
+    pointlogID_complete_MA = create_pointlogID_complete(Contributions.MA_Contribution, open_urls)
+    pointlogID_complete_MAA = create_pointlogID_complete(Contributions.MAA_Contribution, open_urls)
+    query = ma_and_maa_mp3_mp4_checking.format(video_type, pointlogID_complete_MAA, none_condition, video_type, pointlogID_complete_MA, none_condition,)  # album_query
+    # print(query)
+    cursor.execute(query)
+    result = cursor.fetchall()
+    full_ma_maa_mp3 = pd.DataFrame(result, columns=[i[0] for i in cursor.description])
+    full_ma_maa_mp3.drop_duplicates(subset=["track_id"], keep="first", ignore_index=True)
+    return full_ma_maa_mp3
+
+def extract_MA_MAA_remove_dup(open_urls, contribution_sheet):
+    additional_url = extract_MA_MAA_MP3_MP4(open_urls, contribution_sheet.query_condition1, contribution_sheet.query_condition2)
+    existed_url = df_processing(contribution_sheet, open_urls).create_df_tocheck_ori_trackid()
+    track_id = existed_url['track_id'].to_list()
+    additional_url_remove_dup = additional_url[~additional_url["track_id"].isin(track_id)]
+    df_row = len(df_processing(contribution_sheet, open_urls).create_df_ori()) + 1
+    df_processing(contribution_sheet, open_urls).create_sheet().add_rows(additional_url_remove_dup.shape[0])
+    set_with_dataframe(
+        df_processing(contribution_sheet, open_urls).create_sheet(), additional_url_remove_dup, row=df_row, include_column_header=False)
+    print(Fore.LIGHTGREEN_EX + "\nSending message to slack..." + Style.RESET_ALL)
+    update_slack_report(
+            contribution_sheet.slack_title,
+            additional_url_remove_dup,
+            contribution_sheet.slack_message,
+            contribution_sheet.actiontype,
+            contribution_sheet.report_description,
+            contribution_sheet.report_sheet
+        )
+
+# open_urls = client_gspread.open_by_url(
+#     # "https://docs.google.com/spreadsheets/d/1fqKT-5lrnaJ_05kZnECa5nMY9lN9sq3c05Lh14Gdm1c/edit#gid=574026380",
+#     "https://docs.google.com/spreadsheets/d/1ZUzx1smeyIKD4PtQ-hhT1kbPSTGRdu8I8NG1uvzcWr4/edit#gid=1373813396",
+#     # "https://docs.google.com/spreadsheets/d/1TefQkARzyMfUTVyHU-CZjON8lLgCo_2nzqjsZzOG04Q/edit#gid=1339320546"
+# )
+# extract_MA_MAA_remove_dup(open_urls, Contributions.MA_MAA_MP_3)
+# extract_MA_MAA_remove_dup(open_urls, Contributions.MA_MAA_MP_4)

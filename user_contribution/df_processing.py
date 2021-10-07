@@ -47,6 +47,13 @@ class df_processing:
         # df_tocheck_ori = df_tocheck_ori.loc[:, ~df_tocheck_ori.columns.duplicated()]
         return df_tocheck_ori
 
+    def create_df_tocheck_ori_trackid(self):
+        # Tạo df với columns có chứa PointlogsID
+        df_ori = self.create_df_ori()
+        df_tocheck_ori = find_dfcolumn(df_ori, "track_id")
+        # df_tocheck_ori = df_tocheck_ori.loc[:, ~df_tocheck_ori.columns.duplicated()]
+        return df_tocheck_ori
+
     def create_prevalid_row(self):
         # Xác định dòng cuối giá trị prevalid và tạo df với các dòng sau prevalid
         df_ori = self.create_df_ori()
