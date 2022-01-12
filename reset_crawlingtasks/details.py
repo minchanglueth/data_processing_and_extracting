@@ -86,14 +86,14 @@ def delete_insert_mp3(df_filtered):
     update_db(df_filtered["insert_query"])
 
     df_filtered_c = df_filtered[
-        (df_filtered["Type"] == "c") | (df_filtered["Type"] == "z")
+        (df_filtered["Type"] == "c") | (df_filtered["Type"] == "z") | (df_filtered["Type"] == "C") | (df_filtered["Type"] == "Z")
     ]
     insert_query(
         df_filtered_c, "C78F687CB3BE4D90B30F49435317C3AC", "MP3_to_replace", "MP_3"
     )
     update_db(df_filtered_c["insert_query"])
 
-    df_filtered_d = df_filtered[(df_filtered["Type"] == "d")]
+    df_filtered_d = df_filtered[(df_filtered["Type"] == "d") | (df_filtered["Type"] == "D")]
     insert_query(
         df_filtered_d, "3CF047F3B0F349B3A9A39CE7FDAB1DA6", "MP3_to_replace", "MP_3"
     )
@@ -128,6 +128,9 @@ def filtered_delete_insert_mp3():
             (df_filtered["Type"] == "c")
             | (df_filtered["Type"] == "d")
             | (df_filtered["Type"] == "z")
+            | (df_filtered["Type"] == "C")
+            | (df_filtered["Type"] == "D")
+            | (df_filtered["Type"] == "Z")
         )
     ]
     delete_insert_mp3(df_filtered)
@@ -153,6 +156,6 @@ def reset_crawlingsid():
     print("\n" + Fore.LIGHTYELLOW_EX + "The file is done processing!" + Style.RESET_ALL)
 
 
-reset_crawlingsid()
+# reset_crawlingsid()
 
 # df_filtered.to_html('nc_subgenre_summary/nc_Test.html')
