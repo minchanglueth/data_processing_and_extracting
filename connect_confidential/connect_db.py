@@ -6,8 +6,8 @@ from sshtunnel import SSHTunnelForwarder
 # import calendar
 
 home = expanduser('~')
-pkeyfilepath = '/Documents/VIBBIDI/DBconnect/ec2-proxy2-glue-th.pem'
-mypkey = paramiko.RSAKey.from_private_key_file(home + pkeyfilepath)
+# pkeyfilepath = '/Documents/VIBBIDI/DBconnect/ec2-proxy2-glue-th.pem'
+# mypkey = paramiko.RSAKey.from_private_key_file(home + pkeyfilepath)
 # if you want to use ssh password use - ssh_password='your ssh password', bellow
 
 sql_hostname = 'v4-mysql-master.vibbidi.com'
@@ -26,7 +26,7 @@ mypkey = paramiko.RSAKey.from_private_key_file(home + pkeyfilepath)
 
 sql_hostname = 'v4-mysql-master.vibbidi.com'
 sql_username = 'minchan'
-sql_password = 'mInch@n0120'
+sql_password = 'mInch@n091338'
 # sql_main_database = 'original_social_graph'
 sql_port = 3306
 ssh_host = 'db-proxy.vibbidi.net'
