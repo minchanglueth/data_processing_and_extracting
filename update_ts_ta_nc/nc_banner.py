@@ -1,4 +1,5 @@
-from connect_confidential.connect_db_final import conn, cursor
+# from connect_confidential.connect_db_final import conn, cursor
+from connect_confidential.connect_db import conn, cursor
 # from connect_confidential.connect_db_stg import conn, cursor
 
 from update_data_report import report_invalid_ids, report_to_db, if_exist_report, sheet
